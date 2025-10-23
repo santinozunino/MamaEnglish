@@ -354,8 +354,8 @@
         recResult.innerHTML = `<strong>Tu transcripción:</strong> <div style=\"margin-top:6px\">\"${text}\"</div>`;
         const target = FINAL_LESSONS[lessonIndex].phrases[phraseIndex].en.toLowerCase().replace(/[!?.]/g,'');
         const clean = txt=> txt.toLowerCase().replace(/[!?.]/g,'');
-        const tWords = target.split(/\\s+/);
-        const sWords = clean(text).split(/\\s+/);
+        const tWords = target.split(/\s+/);
+        const sWords = clean(text).split(/\s+/);
         let matches = 0;
         tWords.forEach((w, i)=>{ if(sWords[i] && sWords[i].startsWith(w.slice(0,3))) matches++; });
         const score = Math.round((matches / tWords.length) * 100);
@@ -381,13 +381,13 @@
         if(!t) { alert('No hay transcripción para comprobar. Grabe su voz primero.'); return; }
         const target = FINAL_LESSONS[lessonIndex].phrases[phraseIndex].en.toLowerCase().replace(/[!?.]/g,'');
         const clean = txt=> txt.toLowerCase().replace(/[!?.]/g,'');
-        const tWords = target.split(/\\s+/);
-        const sWords = clean(t).split(/\\s+/);
+        const tWords = target.split(/\s+/);
+        const sWords = clean(t).split(/\s+/);
         let matches = 0;
         tWords.forEach((w, i)=>{ if(sWords[i] && sWords[i].startsWith(w.slice(0,3))) matches++; });
         const score = Math.round((matches / tWords.length) * 100);
         scoreEl.textContent = 'Puntuación: ' + score + '%';
-        recResult.innerHTML += `<div style=\"margin-top:6px;color:var(--muted)\">Comparaci\u00f3n autom\u00e1tica sencilla realizada.</div>`;
+        recResult.innerHTML += `<div style=\"margin-top:6px;color:var(--muted)\">Comparación automática sencilla realizada.</div>`;
       } else {
         alert('Grabe su voz primero (botón 🎤) y luego pulse "Comprobar".');
       }
