@@ -1,0 +1,352 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Enseña Inglés para Mamá</title>
+  <style>
+    /* Reset y tipografía */
+    :root{--bg:#0f1724;--card:#0b1220;--accent:#60a5fa;--muted:#94a3b8;--glass: rgba(255,255,255,0.04)}
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial;color:#e6eef8;background:linear-gradient(180deg,#071022 0%,#081229 60%);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}
+    .app{width:100%;max-width:980px}
+    header{display:flex;gap:16px;align-items:center;margin-bottom:18px}
+    .logo{width:68px;height:68px;background:linear-gradient(135deg,var(--accent),#2563eb);border-radius:14px;display:flex;align-items:center;justify-content:center;font-weight:700;color:white;font-size:22px;box-shadow:0 6px 20px rgba(8,15,30,0.6)}
+    h1{margin:0;font-size:20px}
+    p.lead{margin:0;color:var(--muted);font-size:14px}
+
+    /* Layout */
+    .main{display:grid;grid-template-columns:360px 1fr;gap:20px}
+    .card{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));border-radius:14px;padding:16px;box-shadow:0 6px 18px rgba(3,6,12,0.6);border:1px solid rgba(255,255,255,0.03)}
+
+    /* Sidebar */
+    .lessons{display:flex;flex-direction:column;gap:12px}
+    .lesson{padding:12px;border-radius:10px;cursor:pointer;transition:all .18s ease;background:var(--glass);border:1px solid transparent}
+    .lesson:hover{transform:translateY(-4px);box-shadow:0 8px 18px rgba(2,6,23,0.6)}
+    .lesson.active{background:linear-gradient(90deg,#06233d44,#081229);border:1px solid rgba(96,165,250,0.14)}
+
+    /* Content */
+    .controls{display:flex;gap:8px;align-items:center;margin-bottom:12px}
+    button.btn{background:transparent;border:1px solid rgba(255,255,255,0.06);padding:8px 12px;border-radius:10px;color:inherit;cursor:pointer}
+    button.primary{background:linear-gradient(90deg,var(--accent),#2563eb);border:none;color:white}
+    .phrase-box{padding:14px;border-radius:12px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.03);display:flex;flex-direction:column;gap:8px}
+    .phrase{font-size:20px;font-weight:600}
+    .translation{color:var(--muted)}
+
+    /* Conversation */
+    .conversation{margin-top:12px;display:flex;flex-direction:column;gap:8px}
+    .bubble{padding:10px 12px;border-radius:10px;max-width:85%;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.02)}
+    .who{font-weight:700;color:var(--accent);font-size:13px;margin-bottom:6px}
+
+    /* Controls row */
+    .row{display:flex;gap:10px;align-items:center}
+    label{font-size:13px;color:var(--muted)}
+    input[type=range]{width:160px}
+
+    /* Recognition results */
+    .rec{margin-top:8px;background:rgba(0,0,0,0.2);padding:10px;border-radius:8px;color:#dff3ff;border:1px dashed rgba(96,165,250,0.12)}
+    .score{font-size:14px;font-weight:700;color:#9ae6b4}
+
+    /* Small devices */
+    @media (max-width:920px){.main{grid-template-columns:1fr;}.logo{width:56px;height:56px}}
+
+    /* Subtle animations */
+    .pulse{animation:pulse 1.6s infinite}
+    @keyframes pulse{0%{transform:scale(1);opacity:1}50%{transform:scale(1.02);opacity:0.9}100%{transform:scale(1);opacity:1}}
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header>
+      <div class="logo">EN</div>
+      <div>
+        <h1>Enseña Inglés para Mamá</h1>
+        <p class="lead">Interfaz en español — practica pronunciación con voz, escucha y conversaciones reales.</p>
+      </div>
+    </header>
+
+    <div class="main">
+      <aside class="card" style="height:fit-content;">
+        <h3>Lecciones</h3>
+        <div class="lessons" id="lessonsList"></div>
+        <hr style="margin:12px 0;border:none;border-top:1px solid rgba(255,255,255,0.03)">
+        <div>
+          <label style="font-size:13px;color:var(--muted)">Velocidad de lectura</label>
+          <div class="row" style="margin-top:8px;">
+            <input id="rate" type="range" min="0.6" max="1.6" step="0.1" value="0.9">
+            <span id="rateVal">0.9x</span>
+          </div>
+          <label style="font-size:13px;color:var(--muted);margin-top:8px;display:block">Tono</label>
+          <div class="row" style="margin-top:8px;">
+            <input id="pitch" type="range" min="0.6" max="1.6" step="0.1" value="1">
+            <span id="pitchVal">1.0</span>
+          </div>
+        </div>
+      </aside>
+
+      <section class="card">
+        <div class="controls">
+          <button class="btn" id="prev">◀ Anterior</button>
+          <button class="btn" id="next">Siguiente ▶</button>
+          <div style="flex:1"></div>
+          <button class="btn" id="playAll">▶ Reproducir frase</button>
+          <button class="btn" id="speakExample">🎭 Escuchar conversación</button>
+        </div>
+
+        <div class="phrase-box" id="phraseBox">
+          <div class="phrase" id="phraseEN">–</div>
+          <div class="translation" id="phraseES">–</div>
+
+          <div class="row" style="margin-top:6px;">
+            <button class="btn primary" id="play">Escuchar</button>
+            <button class="btn" id="record">🎤 Grabar mi voz</button>
+            <button class="btn" id="check">🔎 Comprobar</button>
+            <div style="flex:1"></div>
+            <div class="score" id="score">Puntuación: —</div>
+          </div>
+
+          <div class="rec" id="recResult" style="display:none;margin-top:8px"></div>
+        </div>
+
+        <div style="margin-top:14px">
+          <h4>Conversación de ejemplo</h4>
+          <div class="conversation" id="conversation"></div>
+        </div>
+
+        <div style="margin-top:14px">
+          <h4>Consejos rápidos (en español)</h4>
+          <ul style="color:var(--muted);line-height:1.6">
+            <li>Escucha la frase primero y repítela en voz alta.</li>
+            <li>Graba tu voz y usa "Comprobar" para recibir retroalimentación sencilla.</li>
+            <li>No hace falta hablar perfecto — practica lentamente y con constancia.</li>
+          </ul>
+        </div>
+
+        <div style="margin-top:12px;color:var(--muted);font-size:13px">
+          <strong>Nota:</strong> para comprobar pronunciación se utiliza la API de reconocimiento de voz del navegador (Web Speech). Algunos navegadores pueden requerir permisos o no soportarlo.
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <script>
+    // Datos de lecciones (en español para la UI)
+    const LESSONS = [
+      {
+        id:1,
+        title: 'Saludos básicos',
+        description: 'Aprende a saludar y presentarte en inglés.',
+        phrases: [
+          { en: 'Hello!', es: '¡Hola!' },
+          { en: 'My name is Maria.', es: 'Me llamo María.' },
+          { en: 'Nice to meet you.', es: 'Mucho gusto.' }
+        ],
+        conversation: [
+          { who:'A', en:'Hello! My name is Maria.', es:'¡Hola! Me llamo María.' },
+          { who:'B', en:'Nice to meet you, Maria.', es:'Mucho gusto, Maria.' }
+        ]
+      },
+      {
+        id:2,
+        title: 'Pedir en un café',
+        description: 'Frases útiles para pedir comida o bebida.',
+        phrases: [
+          { en: 'Can I have a coffee, please?', es: '¿Puedo tomar un café, por favor?' },
+          { en: 'I would like a sandwich.', es: 'Me gustaría un sándwich.' }
+        ],
+        conversation: [
+          { who:'Cliente', en:'Can I have a coffee, please?', es:'¿Puedo tomar un café, por favor?' },
+          { who:'Camarero', en:'Of course. Would you like milk?', es:'Por supuesto. ¿Le gustaría con leche?' }
+        ]
+      },
+      {
+        id:3,
+        title: 'Frases amables',
+        description: 'Palabras para ser amable: gracias y disculpas.',
+        phrases: [
+          { en: 'Thank you very much.', es: 'Muchas gracias.' },
+          { en: 'I am sorry.', es: 'Lo siento.' }
+        ],
+        conversation: [
+          { who:'A', en:'Thank you very much for your help.', es:'Muchas gracias por su ayuda.' },
+          { who:'B', en:'You are welcome.', es:'De nada.' }
+        ]
+      }
+    ];
+
+    // Estado
+    let lessonIndex = 0;
+    let phraseIndex = 0;
+
+    const lessonsList = document.getElementById('lessonsList');
+    const phraseEN = document.getElementById('phraseEN');
+    const phraseES = document.getElementById('phraseES');
+    const conversationBox = document.getElementById('conversation');
+    const playBtn = document.getElementById('play');
+    const playAllBtn = document.getElementById('playAll');
+    const speakExampleBtn = document.getElementById('speakExample');
+    const prevBtn = document.getElementById('prev');
+    const nextBtn = document.getElementById('next');
+    const recordBtn = document.getElementById('record');
+    const checkBtn = document.getElementById('check');
+    const recResult = document.getElementById('recResult');
+    const scoreEl = document.getElementById('score');
+    const rateInput = document.getElementById('rate');
+    const pitchInput = document.getElementById('pitch');
+    const rateVal = document.getElementById('rateVal');
+    const pitchVal = document.getElementById('pitchVal');
+
+    // Rellenar lista de lecciones
+    function renderLessons(){
+      lessonsList.innerHTML = '';
+      LESSONS.forEach((l, i)=>{
+        const el = document.createElement('div');
+        el.className = 'lesson' + (i===lessonIndex? ' active':'');
+        el.innerHTML = `<strong>${l.title}</strong><div style="font-size:13px;color:var(--muted)">${l.description}</div>`;
+        el.onclick = ()=>{lessonIndex = i; phraseIndex = 0; render();};
+        lessonsList.appendChild(el);
+      });
+    }
+
+    function render(){
+      renderLessons();
+      const lesson = LESSONS[lessonIndex];
+      const phrase = lesson.phrases[phraseIndex];
+      phraseEN.textContent = phrase.en;
+      phraseES.textContent = phrase.es;
+      renderConversation(lesson.conversation);
+      scoreEl.textContent = 'Puntuación: —';
+      recResult.style.display='none';
+    }
+
+    function renderConversation(conv){
+      conversationBox.innerHTML = '';
+      conv.forEach(m=>{
+        const b = document.createElement('div');
+        b.className = 'bubble';
+        b.innerHTML = `<div class="who">${m.who}</div><div style="font-weight:600">${m.en}</div><div class="translation">${m.es}</div>`;
+        conversationBox.appendChild(b);
+      });
+    }
+
+    // Text-to-Speech (SpeechSynthesis)
+    function speak(text, opts={rate:parseFloat(rateInput.value), pitch:parseFloat(pitchInput.value)}){
+      if(!('speechSynthesis' in window)) { alert('Su navegador no soporta síntesis de voz. Use Chrome o Edge.'); return; }
+      window.speechSynthesis.cancel();
+      const ut = new SpeechSynthesisUtterance(text);
+      // buscar voz en inglés preferida
+      const voices = window.speechSynthesis.getVoices();
+      let v = voices.find(x=>/en-|English/i.test(x.lang || x.name));
+      if(!v && voices.length) v = voices[0];
+      if(v) ut.voice = v;
+      ut.rate = opts.rate || 0.9;
+      ut.pitch = opts.pitch || 1;
+      window.speechSynthesis.speak(ut);
+    }
+
+    // Reproducir la frase actual
+    playBtn.onclick = ()=>{ speak(LESSONS[lessonIndex].phrases[phraseIndex].en); };
+    playAllBtn.onclick = ()=>{ speak(LESSONS[lessonIndex].phrases[phraseIndex].en); };
+
+    // Reproducir conversación: lee cada línea con pequeño delay
+    speakExampleBtn.onclick = async ()=>{
+      const conv = LESSONS[lessonIndex].conversation;
+      for(const line of conv){
+        // mostrar en la UI (pequeña animación)
+        const bubble = document.createElement('div'); bubble.className='bubble pulse'; bubble.innerHTML = `<div class="who">${line.who}</div><div style="font-weight:600">${line.en}</div><div class="translation">${line.es}</div>`;
+        conversationBox.appendChild(bubble);
+        speak(line.en);
+        await new Promise(r => setTimeout(r, Math.max(900, line.en.length*70)));
+        conversationBox.removeChild(bubble);
+      }
+      renderConversation(LESSONS[lessonIndex].conversation);
+    }
+
+    // Prev / Next
+    prevBtn.onclick = ()=>{ phraseIndex = Math.max(0, phraseIndex-1); render(); };
+    nextBtn.onclick = ()=>{ const max = LESSONS[lessonIndex].phrases.length-1; phraseIndex = Math.min(max, phraseIndex+1); render(); };
+
+    // Rate / Pitch updates
+    rateInput.oninput = ()=>{ rateVal.textContent = rateInput.value + 'x'; };
+    pitchInput.oninput = ()=>{ pitchVal.textContent = pitchInput.value; };
+
+    // Reconocimiento de voz para comprobar pronunciación
+    let recognition = null;
+    let isRecording = false;
+    function initRecognition(){
+      const SR = window.SpeechRecognition || window.webkitSpeechRecognition || null;
+      if(!SR) return null;
+      const r = new SR();
+      r.lang = 'en-US';
+      r.interimResults = false;
+      r.maxAlternatives = 1;
+      r.onresult = (e)=>{
+        const text = e.results[0][0].transcript;
+        recResult.style.display='block';
+        recResult.innerHTML = `<strong>Tu transcripción:</strong> <div style="margin-top:6px">"${text}"</div>`;
+        // comparar simple: cuantas palabras coinciden con la frase objetivo
+        const target = LESSONS[lessonIndex].phrases[phraseIndex].en.toLowerCase().replace(/[!?.]/g,'');
+        const clean = txt=> txt.toLowerCase().replace(/[!?.]/g,'');
+        const tWords = target.split(/\s+/);
+        const sWords = clean(text).split(/\s+/);
+        let matches = 0;
+        tWords.forEach((w, i)=>{ if(sWords[i] && sWords[i].startsWith(w.slice(0,3))) matches++; });
+        const score = Math.round((matches / tWords.length) * 100);
+        scoreEl.textContent = 'Puntuación: ' + score + '%';
+      };
+      r.onerror = (ev)=>{
+        recResult.style.display='block';
+        recResult.textContent = 'Error de reconocimiento: ' + (ev.error || ev.message || 'desconocido');
+      };
+      r.onend = ()=>{ isRecording = false; recordBtn.textContent = '🎤 Grabar mi voz'; recordBtn.classList.remove('primary'); };
+      return r;
+    }
+
+    recordBtn.onclick = ()=>{
+      if(!recognition) { recognition = initRecognition(); if(!recognition){ alert('El reconocimiento de voz no está disponible en su navegador. Pruebe Chrome o Edge en escritorio.'); return;} }
+      if(isRecording){ recognition.stop(); isRecording=false; recordBtn.textContent='🎤 Grabar mi voz'; recordBtn.classList.remove('primary'); }
+      else{ try{ recognition.start(); isRecording=true; recordBtn.textContent='⏹️ Detener'; recordBtn.classList.add('primary'); recResult.style.display='block'; recResult.textContent='Escuchando...'; }catch(e){ recResult.style.display='block'; recResult.textContent='No se pudo iniciar el micrófono: '+e.message; }}
+    };
+
+    // "Comprobar" usa la misma lógica que al terminar reconocimiento si hay texto ya transcrito
+    checkBtn.onclick = ()=>{
+      // Si hay un resultado en recResult con la transcripción, repetir la evaluación
+      if(recResult.style.display !== 'none' && recResult.textContent.includes('Tu transcripción:')){
+        // for simplicity: retrigger a fake onresult using the text content
+        const t = recResult.innerText.split('"')[1] || '';
+        if(!t) { alert('No hay transcripción para comprobar. Grabe su voz primero.'); return; }
+        // evaluar como en onresult
+        const target = LESSONS[lessonIndex].phrases[phraseIndex].en.toLowerCase().replace(/[!?.]/g,'');
+        const clean = txt=> txt.toLowerCase().replace(/[!?.]/g,'');
+        const tWords = target.split(/\s+/);
+        const sWords = clean(t).split(/\s+/);
+        let matches = 0;
+        tWords.forEach((w, i)=>{ if(sWords[i] && sWords[i].startsWith(w.slice(0,3))) matches++; });
+        const score = Math.round((matches / tWords.length) * 100);
+        scoreEl.textContent = 'Puntuación: ' + score + '%';
+        recResult.innerHTML += `<div style="margin-top:6px;color:var(--muted)">Comparación automática sencilla realizada.</div>`;
+      } else {
+        alert('Grabe su voz primero (botón 🎤) y luego pulse "Comprobar".');
+      }
+    };
+
+    // Inicialización
+    window.onload = ()=>{
+      // Cargar voces (algunos navegadores las cargan asíncronamente)
+      if('speechSynthesis' in window){ window.speechSynthesis.onvoiceschanged = ()=>{}; }
+      render();
+    };
+
+    // Mejor experiencia: permitir hacer click en la frase para reproducir
+    phraseEN.onclick = ()=> playBtn.click();
+
+    // Atajos de teclado simples
+    window.addEventListener('keydown', (e)=>{
+      if(e.key === 'ArrowRight') nextBtn.click();
+      if(e.key === 'ArrowLeft') prevBtn.click();
+      if(e.key.toLowerCase() === 'r') recordBtn.click();
+      if(e.key.toLowerCase() === 'p') playBtn.click();
+    });
+  </script>
+</body>
+</html>
